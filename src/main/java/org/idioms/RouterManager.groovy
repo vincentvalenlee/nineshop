@@ -1,6 +1,7 @@
 package org.idioms
 
 import groovy.io.FileType
+import io.vertx.core.Future
 import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
 
@@ -21,16 +22,21 @@ class RouterManager {
                 /*
                 * 1、实例化配置中的类对象，将类对象的metaClass元类添加context方法
                 * 2、根据类型（get/post),从context中解析参数
-                * 3、如果为异步控制器，则调用异步闭包块，运行原始controller中的方法，并将result结果【目前支持三种结果对象，模板页、json、数据流】写入response，并end响应
-                * 4、否则如果为同步控制器，使用同步闭包块调用controller方法，将result结果写入写入response，并end响应
+                * 3、使用Rxjava块调用controller方法，将result结果写入写入response，并end响应【控制器中都是同步代码，但vert.x将同步代码包装成了异步处理】
                 */
-            if (conf.sync) {
-                router.route(conf.path).blockingHandler({ context ->
-
+            if (conf.nosync) {
+                //显式使用@nosync注解，controller方法自己使用context，非阻塞的自己处理请求响应，则直接调用
+                router.route(conf.path).handler({context ->
+                    //TODO:直接调用控制器对应的action方法【自己负责end响应】，通常这些方法不返回ViewResult，只返回Void
                 })
             } else {
-                router.route(conf.path).handler({context ->
-                    //异步的controller方法，都将在自己的回调方法中使用contex对象end响应
+                router.route(conf.path).blockingHandler({ context ->
+                    //异步的controller方法，使用Rxjava处理，在所有方法中都会添加一个闭包，用户将处理结果返回给响应流
+                    Observer<ViewResult> observer = Observers.create({ ViewResult ->
+                        //TODO:将结果写入响应流的观察者实现
+                    })
+                    // TODO:运行控制器类的action方法，获取到ViewResult结果(如果有异常，则包装成exception result）
+                    Observable.just().subscribe(observer)
                 })
             }
 

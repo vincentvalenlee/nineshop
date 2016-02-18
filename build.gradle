@@ -99,6 +99,8 @@ dependencies {
     compile "io.vertx:vertx-core:3.2.0"
     compile "io.vertx:vertx-lang-groovy:3.2.0"
     compile 'io.vertx:vertx-web:3.2.0'
+    compile 'io.reactivex:rxgroovy:1.0.3'
+
     testCompile 'junit:junit:4.11'
     testCompile localGroovy()
 
