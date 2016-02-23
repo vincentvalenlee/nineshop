@@ -1,8 +1,6 @@
 package org.idioms
 
 import groovy.io.FileType
-import io.vertx.core.Future
-import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
 
 /**
@@ -18,6 +16,7 @@ class RouterManager {
         //将上下文加入controller中,因此控制器中能够随时访问到router上下文
         //controller.metaClass.context = context
         def config = getConfig()
+
         config.each {conf ->
                 /*
                 * 1、实例化配置中的类对象，将类对象的metaClass元类添加context方法
@@ -57,8 +56,7 @@ class RouterManager {
         def engineer = new GroovyScriptEngine(classpath)
         classpath.traverse type: FileType.FILES, nameFilter:~/.*Controller.groovy/, maxDepth:0, {
             //深度遍历*Controller.groovy的控制器脚本，加载类
-            def controller = engineer.loadScriptByName(it).newInstance()
-
+            def contClass = engineer.loadScriptByName(it).methods.collect()
 
             //获取类上的所有public方法，如果使用@Http注解，则使用@Http注解构造config。如果没有@Http注解，则使用className/MethodName作为映射路径
             //默认method=get，从url中解析参数名一样的参数设置值；如果method=post（put，delete），则判断参数是否为简单类型，如果简单类型则从url中解析，如果为复杂对象类型，则从body中的json参数中解析对象
