@@ -3,6 +3,8 @@ package org.idioms
 import groovy.io.FileType
 import io.vertx.ext.web.Router
 
+import java.lang.reflect.Modifier
+
 /**
  * 使用org.idioms.controller目录下的控制器的对应方法进行处理【默认异步，如果是同步处理器，则名称中具有*SyncController】。
  * 控制器类中，可以在Action方法上添加[Http(url="....", method="Post")]\[Get]\[Put]\[Delete] Http方法
@@ -56,11 +58,21 @@ class RouterManager {
         def engineer = new GroovyScriptEngine(classpath)
         classpath.traverse type: FileType.FILES, nameFilter:~/.*Controller.groovy/, maxDepth:0, {
             //深度遍历*Controller.groovy的控制器脚本，加载类
-            def contClass = engineer.loadScriptByName(it).methods.collect()
+            def contClass = engineer.loadScriptByName(it.absolutePath)
+            //查找所有public公共方法
+            def pubMethods = contClass.methods.grep {
+                Modifier.isPublic(it.getModifiers())
+            }
+            pubMethods.each {
+                if (it.annotations.any {
+                    it.annotationType() == Http.class
+                }) {
+                    //TODO:如果使用@Http注解，则使用@Http注解构造config[@Http(method=get/post/put/delete, urlparam=true//从url中解析参数，如果为false，且方法为post，则从body中解析出对象将对应属性设置到参数中)]
 
-            //获取类上的所有public方法，如果使用@Http注解，则使用@Http注解构造config。如果没有@Http注解，则使用className/MethodName作为映射路径
-            //默认method=get，从url中解析参数名一样的参数设置值；如果method=post（put，delete），则判断参数是否为简单类型，如果简单类型则从url中解析，如果为复杂对象类型，则从body中的json参数中解析对象
-
+                } else {
+                    //TODO:如果没有@Http注解，则使用className/MethodName作为映射路径
+                }
+            }
 
         }
 
