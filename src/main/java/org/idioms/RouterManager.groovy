@@ -27,11 +27,11 @@ class RouterManager {
                 */
             if (conf.nosync) {
                 //显式使用@nosync注解，controller方法自己使用context，非阻塞的自己处理请求响应，则直接调用
-                router.route(conf.path).handler({context ->
+                router.route(conf.method, conf.path).handler({context ->
                     //TODO:直接调用控制器对应的action方法【自己负责end响应】，通常这些方法不返回ViewResult，只返回Void
                 })
             } else {
-                router.route(conf.path).blockingHandler({ context ->
+                router.route(conf.method, conf.path).blockingHandler({ context ->
                     //异步的controller方法，使用Rxjava处理，在所有方法中都会添加一个闭包，用户将处理结果返回给响应流
                     Observer<ViewResult> observer = Observers.create({ ViewResult ->
                         //TODO:将结果写入响应流的观察者实现
@@ -67,8 +67,22 @@ class RouterManager {
                 if (it.annotations.any {
                     it.annotationType() == Http.class
                 }) {
-                    //TODO:如果使用@Http注解，则使用@Http注解构造config[@Http(method=get/post/put/delete, urlparam=true//从url中解析参数，如果为false，且方法为post，则从body中解析出对象将对应属性设置到参数中)]
+                    //TODO:如果使用@Http注解，则使用@Http注解构造config
+                    def httpAnno = it.annotations.find {
+                        it.annotationType() == Http.class;
+                    }
+                    def config = new Expando()
+                    config.method = httpAnno.method
+                    config.regex = httpAnno.regex
+                    if (httpAnno.regex == true) {
+                        //正则表达式参数，不解析url中的:标识参数，参数将依据顺序解析
+                        config.path = httpAnno.url;
+                    } else {
+                        //TODO:非正则表达式，解析:标识参数，将根据名字进行参数匹配
+                        config.urlparams = []
 
+                    }
+                    config.path = httpAnno.url
                 } else {
                     //TODO:如果没有@Http注解，则使用className/MethodName作为映射路径
                 }
