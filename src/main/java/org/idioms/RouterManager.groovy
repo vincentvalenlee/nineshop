@@ -67,22 +67,23 @@ class RouterManager {
                 if (it.annotations.any {
                     it.annotationType() == Http.class
                 }) {
-                    //TODO:如果使用@Http注解，则使用@Http注解构造config
                     def httpAnno = it.annotations.find {
                         it.annotationType() == Http.class;
                     }
                     def config = new Expando()
                     config.method = httpAnno.method
                     config.regex = httpAnno.regex
-                    if (httpAnno.regex == true) {
-                        //正则表达式参数，不解析url中的:标识参数，参数将依据顺序解析
-                        config.path = httpAnno.url;
-                    } else {
-                        //TODO:非正则表达式，解析:标识参数，将根据名字进行参数匹配
-                        config.urlparams = []
-
-                    }
                     config.path = httpAnno.url
+                    if (!httpAnno.regex) {
+                        //正则表达式参数，不解析url中的:标识参数，参数将依据顺序解析,非正则表达式，解析:标识参数，将根据名字进行参数匹配
+                        config.urlparams = []
+                        def m = httpAnno.url =~ /\/:\w+\//
+                        m.each {
+                            it -= "/:"
+                            it -= "/"
+                            config.urlparams << it
+                        }
+                    }
                 } else {
                     //TODO:如果没有@Http注解，则使用className/MethodName作为映射路径
                 }
