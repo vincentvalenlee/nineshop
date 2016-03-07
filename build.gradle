@@ -63,7 +63,7 @@ sourceSets {
 //ext.buildTypeFile = file("settings.gradle")
 
 dependencies {
-    compile localGroovy()
+    compile 'org.codehaus.groovy:groovy-all:2.4.5'
     compile 'aopalliance:aopalliance:1.0'
     compile 'c3p0:c3p0:0.9.1.1'
     compile 'commons-codec:commons-codec:1.9'
@@ -102,7 +102,7 @@ dependencies {
     compile 'io.reactivex:rxgroovy:1.0.3'
 
     testCompile 'junit:junit:4.11'
-    testCompile localGroovy()
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.5'
 
     //release依赖
 
