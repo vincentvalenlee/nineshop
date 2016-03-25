@@ -64,13 +64,21 @@ class RouterManager {
                 Modifier.isPublic(it.getModifiers())
             }
             pubMethods.each {
+                def config = new Expando()
+                //首先找到第一个复杂对象类型的参数
+                def objParams = it.parameters.findResult {
+                    if (!isPrimitive(it))
+                        return it
+                }
+                if (objParams != null)
+                    config.objparam = objParams
+
                 if (it.annotations.any {
                     it.annotationType() == Http.class
                 }) {
                     def httpAnno = it.annotations.find {
                         it.annotationType() == Http.class;
                     }
-                    def config = new Expando()
                     config.method = httpAnno.method
                     config.regex = httpAnno.regex
                     config.path = httpAnno.url
@@ -85,13 +93,35 @@ class RouterManager {
                         }
                     }
                 } else {
-                    //TODO:如果没有@Http注解，则使用className/MethodName作为映射路径
+                    //如果没有@Http注解，则使用className/MethodName作为映射路径,
+                    // 且方法中如果具有复杂对象参数，则方法为post，否则为get,且复杂对象参数只能是最后一个
+                    config.regex = false;
+                    if (it.parameterTypes.any() {
+                        !isPrimitive(it)
+                    }) {
+                        config.method = Http.METHOD_POST
+                    } else {
+                        config.method = Http.METHOD_GET
+                    }
+                    def url = contClass - "Controller"
+                    url += "/" + it.name
+                    it.parameters.each {
+                        if (isPrimitive(it)) {
+                            config.urlparams << it.name
+                        }
+                    }
                 }
             }
 
         }
 
 
+    }
+
+    def isPrimitive(it) {
+        it.class == int.class || it.class == long.class || it.class == float.class \
+        || it.class == double.class || it.class == boolean.class || it.class == char.class \
+        || it.class == shot.class || it.class == byte.class
     }
 
 }

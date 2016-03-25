@@ -12,6 +12,13 @@ import java.lang.annotation.Target
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Http {
 
+    public final static String METHOD_GET = "get";
+
+    public final static String METHOD_POST = "post";
+
+    public final static String METHOD_PUT = "put";
+
+    public final static String METHOD_DELETE = "delete";
     /**
      * 指定http请求方法：get、post、put、delete
      */
