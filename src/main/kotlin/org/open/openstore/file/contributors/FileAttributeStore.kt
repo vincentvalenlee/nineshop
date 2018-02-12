@@ -30,6 +30,42 @@ interface FileAttributeStore {
 
 }
 
+//文件对象获取属性的扩展
+
+fun FileObject.getAttributes(): Map<String, Any> {
+    val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
+    return attrStore?.let {
+        it.getAttrs(this)
+    } ?: emptyMap()
+}
+
+fun FileObject.getAttribute(attr:String):Any? {
+    val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
+    return attrStore?.let {
+        it.getAttr(this, attr)
+    }
+}
+
+/**
+ * 删除文件的属性
+ */
+fun FileObject.removeAttribute(attrName: String) {
+    val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
+    attrStore?.let {
+        it.rmAttr(this, attrName)
+    }
+}
+
+/**
+ * 设置属性值，如果属性只读，则抛出FileSystemException异常
+ */
+fun FileObject.setAttribute(attrName: String, value: Any, readonly:Boolean = false) {
+    val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
+    attrStore?.let {
+        it.setAttr(this, attrName, value, readonly)
+    }
+}
+
 /**
  * 文件权限的范围：拥有着、同组、所有
  */

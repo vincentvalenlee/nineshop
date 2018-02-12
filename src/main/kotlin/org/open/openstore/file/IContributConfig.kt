@@ -47,7 +47,7 @@ interface IContributConfig {
     fun getParent():Any?
 
     /**
-     * Contributor将调用此方法创建attr指定的可运行对象
+     * Contributor将调用此方法创建attr指定的可运行对象。构造的对象必须具有空构造函数
      */
     fun createExecutable(attr:String):Any?
 }

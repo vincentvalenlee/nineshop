@@ -467,42 +467,6 @@ abstract class AbstractFileObject<AFS: AbstractFileSystem>(var fileName:Abstract
         }
     }
 
-    /**
-     * 抽象文件对象支持的获取文件属性的方法
-     */
-    open fun getAttributes(): Map<String, Any> {
-        val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
-        return attrStore?.let {
-            it.getAttrs(this)
-        } ?: emptyMap()
-    }
-
-    open protected fun getAttribute(attr:String):Any? {
-        val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
-        return attrStore?.let {
-            it.getAttr(this, attr)
-        }
-    }
-
-    /**
-     * 删除文件的属性
-     */
-    open fun removeAttribute(attrName: String) {
-        val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
-        attrStore?.let {
-            it.rmAttr(this, attrName)
-        }
-    }
-
-    /**
-     * 设置属性值，如果属性只读，则抛出FileSystemException异常
-     */
-    open fun setAttribute(attrName: String, value: Any, readonly:Boolean = false) {
-        val attrStore: FileAttributeStore? =  getAdapter(FileAttributeStore::class) as FileAttributeStore?
-        attrStore?.let {
-            it.setAttr(this, attrName, value, readonly)
-        }
-    }
 
     /**
      * 获取文件对象大小，抽象方法，子类必须实现
@@ -741,6 +705,11 @@ abstract class AbstractFileObject<AFS: AbstractFileSystem>(var fileName:Abstract
         }
         return this.operations!!
     }
+
+    override fun fileSystem(): FileSystem = fs
+
+
+
 
 
 }

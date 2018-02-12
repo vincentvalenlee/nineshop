@@ -21,6 +21,8 @@ object FilePlatform {
 
     val POINT_NAME_CONFIG_BUILDER = "config.builders"
 
+    val POINT_NAME_FILE_OPERA = "file.operations"
+
     /**
      * 核心模块定义的文件系统FileContributor扩展点id，应用从此扩展点提供自己的
      */
@@ -30,6 +32,11 @@ object FilePlatform {
      * 核心模块定义的FileSystemConfigBuilder的扩展点id
      */
     val CONTRIBUT_POINT_CONFIG_BUILDER = NAMESPACE_CORE +  "." + POINT_NAME_CONFIG_BUILDER
+
+    /**
+     * 文件对象上操作的扩展点（文件操作是基于文件内容类型的，例如doc上的操作或者pdf上的操作）
+     */
+    val CONTRIBUT_POINT_FILE_OPERA = NAMESPACE_CORE + "." + POINT_NAME_FILE_OPERA
 
     fun getContributRegistry():IContributRegistry {
         TODO("从平台中[osgi运行环境]获取贡献注册表")

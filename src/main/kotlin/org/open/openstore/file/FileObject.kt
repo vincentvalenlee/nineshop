@@ -30,6 +30,9 @@ interface FileObject:  Comparable<FileObject>, Iterable<FileObject>, Closeable, 
 
         val META_FILE_BLOCK_SIZE = "__FILE_BLOCK_SIZE"
 
+        /**
+         * 内容类型元数据，例如：doc文件、pdf文件等
+         */
         val META_FILE_CONTENT_TYPE = "__FILE_CONTENT_TYPE"
 
         val META_FILE_INODE = "__FILE_INODE"
