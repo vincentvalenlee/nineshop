@@ -1,5 +1,6 @@
 package org.open.openstore.file.contributors
 
+import com.google.protobuf.ByteString
 import org.open.openstore.file.*
 import org.open.openstore.file.FileObject.Companion.EMPTY_CHILDREN
 import org.open.openstore.file.FileObject.Companion.EMPTY_LIST
@@ -11,8 +12,10 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-
-
+import com.sun.org.apache.xerces.internal.util.DOMUtil.getParent
+import org.open.openstore.file.FileType
+import com.sun.org.apache.xerces.internal.util.DOMUtil.getParent
+import org.open.openstore.file.FileObject.Companion.EMPTY_OUT
 
 /**
  * 抽象类型的文件对象，他实现部分文件对象功能。子类实现其模板方法
@@ -262,16 +265,36 @@ abstract class AbstractFileObject<AFS: AbstractFileSystem>(var fileName:Abstract
     }
 
     /**
-     * 子类需要实现的创建要写入文件内容的输出流(默认为一个空的流）。仅仅在下面条件下调用：
+     * 子类需要实现的创建要写入文件内容的输出流（默认返回空输出流，不支持写）。仅仅在下面条件下调用：
      * 1.doIsWriteable返回true
      * 2.doGetType为File类型或者IMAGINARY不存在状态，且父对象存在或者为目录
      */
-    open protected fun getOutputStream(append: Boolean): OutputStream {
-        return object: OutputStream() {
-            override fun write(b: Int) {
-                //do nothing
+    open protected fun doGetOutputStream(bAppend: Boolean): OutputStream = EMPTY_OUT
+
+    /**
+     * 准备写这个文件。 确保它是一个文件或其父文件夹存在。 返回用于将文件内容写入的输出流
+     * @throws FileSystemException
+     */
+    open protected fun getOutputStream(append: Boolean = false): OutputStream {
+        val fileAttrStore = this.getAdapter(FileAttributeStore::class) as FileAttributeStore
+        if (append && !(fileAttrStore.getAttr(this, MetaOptions.__APPEND_CONTENT.name) as Boolean)) {
+            throw FileSystemException("write-append-not-supported.error", info= arrayOf(fileName))
+        }
+
+        if (type() === FileType.IMAGINARY) {
+            parent()?.let {
+                it.create(true)
             }
         }
+
+        try {
+            return doGetOutputStream(append)
+        } catch (re: RuntimeException) {
+            throw re
+        } catch (exc: Exception) {
+            throw FileSystemException("vfs.provider/write.error", exc, arrayOf(fileName))
+        }
+
     }
 
     private fun createFolder() {
@@ -708,8 +731,74 @@ abstract class AbstractFileObject<AFS: AbstractFileSystem>(var fileName:Abstract
 
     override fun fileSystem(): FileSystem = fs
 
+    /**
+     * 用户读取文件内容的原始输入流
+     * @throws FileSystemException 如果发生错误
+     */
+    fun getInputStream(): InputStream = try {
+             doGetInputStream()
+        } catch (exc: org.open.openstore.file.FileNotFoundException) {
+            throw org.open.openstore.file.FileNotFoundException(fileName, exc)
+        } catch (exc: java.io.FileNotFoundException) {
+            throw org.open.openstore.file.FileNotFoundException(fileName, exc)
+        } catch (exc: FileSystemException) {
+            throw exc
+        } catch (exc: Exception) {
+            throw FileSystemException("read.error", exc, arrayOf(fileName))
+        }
 
+    override fun name(): IFileName = this.fileName
 
+    override fun publicuri(): String = this.fileName.getFriendlyURI()
 
+    override fun parent(): FileObject? {
+        if (this.compareTo(fs.getRoot()) == 0)
+        {
+            return fs.getParentLayer()?.parent()
+        }
+
+        synchronized (fs) {
+            // Locate the parent of this file
+            if (parent == null) {
+                val name = fileName.getParent()
+                name?.let {
+                    parent = fs.resolveFile(name)
+                }?: return null
+            }
+            return parent
+        }
+    }
+
+    /**
+     * 返回随机读写器
+     * @param mode 通常为r-读，w-写
+     */
+    open fun getRandomAccessContent(mode: String): FileAccessor.RandomAccessor {
+        val fileAttrStore = this.getAdapter(FileAttributeStore::class) as FileAttributeStore
+        if (mode == "r") {
+            if (!(fileAttrStore.getAttr(this, MetaOptions.__RANDOM_ACCESS_READ.name) as Boolean)) {
+                throw FileSystemException("random-access-read-not-supported.error")
+            }
+            if (!isReadable()) {
+                throw FileSystemException("vread-not-readable.error", info = arrayOf(fileName))
+            }
+        }
+
+        if (mode == "w") {
+            if (!(fileAttrStore.getAttr(this, MetaOptions.__RANDOM_ACCESS_READ.name) as Boolean)) {
+                throw FileSystemException("random-access-write-not-supported.error")
+            }
+            if (!isWriteable()) {
+                throw FileSystemException("write-read-only.error", info = arrayOf(fileName))
+            }
+        }
+
+        return try {
+             doGetRandomAccessor(mode)
+        } catch (exc: Exception) {
+            throw FileSystemException("vfs.provider/random-access.error", exc, info = arrayOf(fileName))
+        }
+
+    }
 
 }

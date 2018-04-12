@@ -1,6 +1,7 @@
 package org.open.openstore.file
 
 import java.io.Closeable
+import java.io.OutputStream
 import java.net.URL
 
 /**
@@ -21,6 +22,16 @@ interface FileObject:  Comparable<FileObject>, Iterable<FileObject>, Closeable, 
         val EMPTY_CHILDREN = emptyList<IFileName>()
 
         val EMPTY_LIST = emptyList<Any>()
+
+        val EMPTY_OUT = object: OutputStream() {
+            override fun write(b: Int) {
+                return disableWrite()
+            }
+
+            fun disableWrite():Nothing {
+                throw NotImplementedError()
+            }
+        }
 
         //标准文件元数据KEY
 
