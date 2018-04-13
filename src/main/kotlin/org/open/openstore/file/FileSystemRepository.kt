@@ -43,6 +43,8 @@ interface FileSystemRepository {
 
     fun resolveFile(baseFile: FileObject, name: String): FileObject
 
+    fun resolveFile(baseFile: FileObject, name: String, fileSystemOptions: FileSystemOptions): FileObject
+
     fun resolveFile(baseFile: File, name: String): FileObject
 
     fun resolveName(root: IFileName, name: String): IFileName

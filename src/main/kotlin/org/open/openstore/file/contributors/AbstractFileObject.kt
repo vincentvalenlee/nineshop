@@ -1,6 +1,5 @@
 package org.open.openstore.file.contributors
 
-import com.google.protobuf.ByteString
 import org.open.openstore.file.*
 import org.open.openstore.file.FileObject.Companion.EMPTY_CHILDREN
 import org.open.openstore.file.FileObject.Companion.EMPTY_LIST
@@ -12,10 +11,14 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import com.sun.org.apache.xerces.internal.util.DOMUtil.getParent
 import org.open.openstore.file.FileType
-import com.sun.org.apache.xerces.internal.util.DOMUtil.getParent
 import org.open.openstore.file.FileObject.Companion.EMPTY_OUT
+import java.net.URL
+import java.security.PrivilegedActionException
+import org.open.openstore.file.FilePlatform.UriParser
+import java.security.PrivilegedExceptionAction
+import java.security.AccessController
+
 
 /**
  * 抽象类型的文件对象，他实现部分文件对象功能。子类实现其模板方法
@@ -797,6 +800,35 @@ abstract class AbstractFileObject<AFS: AbstractFileSystem>(var fileName:Abstract
              doGetRandomAccessor(mode)
         } catch (exc: Exception) {
             throw FileSystemException("vfs.provider/random-access.error", exc, info = arrayOf(fileName))
+        }
+
+    }
+
+    override fun type(): FileType {
+        synchronized(fs) {
+            attach()
+            return try {
+                if (type == null) {
+                    doGetType()?.let {
+                        setFileType(it)
+                    }?: setFileType(FileType.IMAGINARY)
+                }
+                type!!
+            } catch (e: Exception) {
+                throw FileSystemException("get-type.error", e, info = arrayOf(fileName))
+            }
+        }
+    }
+
+    override fun url(): URL {
+        try {
+            return AccessController.doPrivileged(PrivilegedExceptionAction {
+                val buf = StringBuilder()
+                val scheme = UriParser.extractScheme(fileName.getURI(), buf)
+                URL(scheme!!, "", -1, buf.toString(), DefaultURLStreamHandler(fs.getRepository(), fs.getFileSystemOptions()))
+            })
+        } catch (e: PrivilegedActionException) {
+            throw FileSystemException("get-url.error", e.exception, info = arrayOf(fileName))
         }
 
     }
